@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Subject Finder</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <a href="http://127.0.0.1:5000/" target="_blank"><img src="static/images/company.png"
+                    alt="Company Logo"></a>
+        </div>
+        <h1>Course Subject Finder</h1>
+        <div class="button-group">
+            <button id="homeBtn">Home</button>
+            <button id="coursesBtn">Search Courses</button>
+        </div>
+    </header>
+    <div class="subjectcontainer">
+        <div class="courseSearchContainer" id="courseSearchContainer" style="display: none;">
+            <form onsubmit="event.preventDefault(); searchCourseSubject();">
+                <div class="searchlabel">Search:</div>
+                <div class="search">
+                    <div class="container">
+                        <div class="crsprefix">
+                            <label for="coursePrefix">Course Prefix</label>
+                            <br>
+                            <div class="searchcontainer">
+                                <input list="coursePrefixList" type="text" class="prefix" id="coursePrefix" name="coursePrefix"
+                                    placeholder="Enter Course Prefix..." autocomplete="off" maxlength="20" required
+                                    oninput="fetchCoursePrefixes(this.value);" onblur="fetchCourseTitles(this.value);"/>
+                                <datalist id="coursePrefixList"></datalist>
+                            </div>
+                        </div>                
+                        <div class="crstitle">
+                            <label for="courseTitle">Course Title</label>
+                            <div class="input-with-button">
+                                <input list="courseTitleList" type="text" class="title" id="courseTitle" name="courseTitle"
+                                    placeholder="Enter Course Title..." autocomplete="off" maxlength="100" required oninput="fetchCourseTitles(this.value);"/>
+                                    <button class="search-btn" id="searchButton" type="submit" onclick="searchCourseSubject()">
+                                        <img src="static/images/loupe.png" alt="search">
+                                    </button>
+                            </div>
+                            <datalist id="courseTitleList"></datalist>
+                        </div>
+                        <div id="loading" style="display: none;">
+                            <p>Loading the courses...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="error" id="error"></div>
+                <div id="result_container" style="display:none;">
+                    <div class="searchResultsLabel">Results:</div><br>
+                    <div id="result"></div>
+                </div>
+            </form>
+        </div>
+        <div class="spinner" id="spinner"></div>
+    </div>          
+    <div id="welcomeMessage" class="animated">
+        <h2>Course Subjects</h2>
+        <p>
+            The course subjects section defines what applicants studied in that specific department.
+            As per the CAS rule, all the course subjects should match the course title or department.
+        </p>
+        <hr class="decorative-line">
+        <h2>Problem</h2>
+        <p>
+            Most of the course subjects should match the course title, but sometimes verifiers may enter incorrect
+            course
+            subjects that may lead to escalation.
+        </p>
+        <hr class="decorative-line">
+        <h2>Solution</h2>
+        <p>
+            If the portal can automatically identify and update the course subjects from the course title, this will
+            reduce
+            course subject escalations. Click <a href="#" id="hereBtn">here</a> to search for courses.
+        </p>
+        <hr class="decorative-line">
+        <div class="design"></div>
+    </div>
+    <footer>
+        &copy; 2023 Harman International. All Rights Reserved.
+        <a href="#">Privacy Policy</a> |
+        <a href="#">Cookies</a> |
+        <a href="#">Terms of Use</a>
+    </footer>
+    <script src="/static/js/index.js"></script>
+</body>
+
+</html>
