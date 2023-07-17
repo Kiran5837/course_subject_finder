@@ -11,7 +11,7 @@
 <body>
     <header>
         <div class="logo">
-            <a href="http://127.0.0.1:5000/" target="_blank"><img src="static/images/company.png"
+            <a href="#" id="logo_btn" target="_blank"><img src="static/images/company.png"
                     alt="Company Logo"></a>
         </div>
         <h1>Course Subject Finder</h1>
@@ -26,13 +26,21 @@
                 <div class="searchlabel">Search:</div>
                 <div class="search">
                     <div class="container">
+                        <div class="university">
+                            <label for="university">University/College</label>
+                            <br>
+                            <div class="searchcontainer">
+                                <input list="universityList" type="text" class="univ" id="university" name="university"
+                                    placeholder="Enter University..." autocomplete="off" maxlength="100" required/>
+                                <datalist id="universityList"></datalist>
+                            </div>
+                        </div>  
                         <div class="crsprefix">
                             <label for="coursePrefix">Course Prefix</label>
                             <br>
                             <div class="searchcontainer">
                                 <input list="coursePrefixList" type="text" class="prefix" id="coursePrefix" name="coursePrefix"
-                                    placeholder="Enter Course Prefix..." autocomplete="off" maxlength="20" required
-                                    oninput="fetchCoursePrefixes(this.value);" onblur="fetchCourseTitles(this.value);"/>
+                                placeholder="Enter Course Prefix..." autocomplete="off" maxlength="20" required disabled/>                   
                                 <datalist id="coursePrefixList"></datalist>
                             </div>
                         </div>                
@@ -40,15 +48,14 @@
                             <label for="courseTitle">Course Title</label>
                             <div class="input-with-button">
                                 <input list="courseTitleList" type="text" class="title" id="courseTitle" name="courseTitle"
-                                    placeholder="Enter Course Title..." autocomplete="off" maxlength="100" required oninput="fetchCourseTitles(this.value);"/>
-                                    <button class="search-btn" id="searchButton" type="submit" onclick="searchCourseSubject()">
+                                    placeholder="Enter Course Title..." autocomplete="off" maxlength="100" required disabled/>
+                                    <button class="search-btn" id="searchButton" type="submit">
                                         <img src="static/images/loupe.png" alt="search">
                                     </button>
                             </div>
                             <datalist id="courseTitleList"></datalist>
                         </div>
                         <div id="loading" style="display: none;">
-                            <p>Loading the courses...</p>
                         </div>
                     </div>
                 </div>
@@ -79,7 +86,7 @@
         <p>
             If the portal can automatically identify and update the course subjects from the course title, this will
             reduce
-            course subject escalations. Click <a href="#" id="hereBtn">here</a> to search for courses.
+            course subject escalations. Click <a href="Search Courses" id="hereBtn">here</a> to search for courses.
         </p>
         <hr class="decorative-line">
         <div class="design"></div>
