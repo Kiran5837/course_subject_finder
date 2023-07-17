@@ -77,6 +77,11 @@ def match_subject_with_dept(dept_names, subject_list):
     for dept in dept_names:
         # Convert department name to lowercase
         lower_dept = dept.lower()
+  
+        # Check if the dept is a foreign language course
+        foreign_language_subject = is_foreign_language_course(dept, subject_list)
+        if foreign_language_subject is not None:
+            return foreign_language_subject, 1.0
 
         # Check for an exact match first
         if lower_dept in lower_subject_list:
@@ -112,7 +117,7 @@ def exclude_subjects(course_title, subjects):
     return subjects
 
 # Define function to match subject using course title, course prefix, a list of subjects and a dictionary of abbreviations
-def match_subject_by_title(course_title, course_prefix, subject_list, abbreviations, threshold=0.55, debug=False):
+def match_subject_by_title(course_title, course_prefix, university, subject_list, abbreviations, threshold=0.55, debug=False):
     # Initialise the spell checker
     spell = Speller(lang='en')
     course_title = ' '.join([spell(word) for word in course_title.split()])
@@ -124,7 +129,7 @@ def match_subject_by_title(course_title, course_prefix, subject_list, abbreviati
     keyword_to_subject = fetch_keyowrd_subjects_from_database()
     excluded_words = [word.lower() for word in fetch_excluded_words_from_database()]
     excluded_titles = fetch_excluded_titles_from_database()
-    dept_names = fetch_dept_abbreviations_from_database(course_prefix)
+    dept_names = fetch_dept_abbreviations_from_database(university,course_prefix)
     # Exclude certain subjects based on the course title
     subject_list = exclude_subjects(course_title, subject_list)
 
@@ -181,7 +186,6 @@ def match_subject_by_title(course_title, course_prefix, subject_list, abbreviati
     # Check if the course title is a foreign language course
     foreign_language_subject = is_foreign_language_course(filtered_title, subject_list)
     if foreign_language_subject is not None:
-        if debug: print(f'Matched by foreign_language_subject: {foreign_language_subject}')
         return foreign_language_subject, 1.0
  
     # Check for predefined subjects using regex patterns
@@ -232,34 +236,65 @@ def return_to_pool(conn):
 def close_all_conn():
     psycopg2.pool.SimpleConnectionPool.closeall()
 
-def fetch_course_titles_from_database(course_prefix):
+def fetch_university_from_database(university):
     # Implement your database query here
-    # This is just an example and will likely need to be adapted to your specific use case.
     connection = fetch_from_database()
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT DISTINCT course_title FROM dept_abbreviations WHERE TRIM(courses) ILIKE %s", (course_prefix+'%',))
+        cursor.execute("SELECT DISTINCT name FROM dept_abbreviations WHERE LOWER(name) LIKE LOWER(%s)", (university+'%',))
+        university = [row[0] for row in cursor.fetchall()]
+        if not university or university == [''] or university is None:
+            raise ValueError('University not found')
+    except Exception as e:
+        print(f"An error occurred while fetching university: {e}")
+    finally:
+        cursor.close()  # close the cursor
+        return_to_pool(connection)  # return the connection to the pool
+    return university
+
+def fetch_course_prefix_from_database(university, course_prefix):
+    # Implement your database query here
+    connection = fetch_from_database()
+
+    # Handle if university or course_prefix is None
+    university = university if university is not None else ''
+    course_prefix = course_prefix if course_prefix is not None else ''
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT DISTINCT courses FROM dept_abbreviations WHERE LOWER(name) LIKE LOWER(%s) AND LOWER(courses) LIKE LOWER(%s)", (university+'%', course_prefix+'%'))
+        course_prefixes = [row[0] for row in cursor.fetchall()]
+        # Throw an error if no course prefix is found
+        if not course_prefixes or course_prefixes == [''] or course_prefixes is None:
+            raise ValueError('Course prefix not found')
+    except Exception as e:
+        print(f"An error occurred while fetching course prefix: {e}")
+        raise e
+    finally:
+        cursor.close()  # close the cursor
+        return_to_pool(connection)  # return the connection to the pool
+    return course_prefixes
+
+def fetch_course_titles_from_database(university, course_prefix):
+    connection = fetch_from_database()
+
+    # Handle if university or course_prefix is None
+    university = university if university is not None else ''
+    course_prefix = course_prefix if course_prefix is not None else ''
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT DISTINCT course_title FROM dept_abbreviations WHERE LOWER(name) LIKE LOWER(%s) AND LOWER(courses) LIKE LOWER(%s)", (university+'%', course_prefix+'%'))
         course_titles = [row[0] for row in cursor.fetchall()]
+        # Throw an error if no course prefix is found
+        if not course_titles or course_titles == [''] or course_titles is None:
+            raise ValueError('Course title not found')
     except Exception as e:
         print(f"An error occurred while fetching course_title: {e}")
     finally:
         cursor.close()  # close the cursor
         return_to_pool(connection)  # return the connection to the pool
     return course_titles
-def fetch_course_prefix_from_database(course_prefix):
-    # Implement your database query here
-    # This is just an example and will likely need to be adapted to your specific use case.
-    connection = fetch_from_database()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT DISTINCT courses FROM dept_abbreviations WHERE TRIM(courses) ILIKE %s", (course_prefix+'%',))
-        course_prefix = [row[0] for row in cursor.fetchall()]
-    except Exception as e:
-        print(f"An error occurred while fetching course_title: {e}")
-    finally:
-        cursor.close()  # close the cursor
-        return_to_pool(connection)  # return the connection to the pool
-    return course_prefix
 
 def fetch_subject_list_from_database():
     connection = fetch_from_database()
@@ -275,12 +310,12 @@ def fetch_subject_list_from_database():
         return_to_pool(connection)  # return the connection to the pool
     return subject_list
 
-def fetch_dept_abbreviations_from_database(course_prefix):
+def fetch_dept_abbreviations_from_database(university,course_prefix):
     connection = fetch_from_database()
     try:
         cursor = connection.cursor()
         # Using ILIKE with a wildcard character (%) to match courses that start with the course_prefix
-        cursor.execute("SELECT DISTINCT departments FROM dept_abbreviations WHERE TRIM(courses) ILIKE %s", (course_prefix+'%',))
+        cursor.execute("SELECT DISTINCT departments FROM dept_abbreviations WHERE LOWER(name) LIKE LOWER(%s) AND LOWER(courses) LIKE LOWER(%s)", ('%'+university+'%', '%'+course_prefix+'%'))
         dept_abbreviations = [row[0] for row in cursor.fetchall()]  # Create a dictionary from the fetched rows
     except Exception as e:
         print(f"An error occurred while fetching dept_abbreviations: {e}")
@@ -397,14 +432,14 @@ def setup():
     subject_list = fetch_subject_list_from_database()
     abbreviations = fetch_abbreviations_from_database()
 
-def main(course_prefix, course_title):
+def main(course_prefix, course_title, university):
     global subject_list, abbreviations
     
     # Fetch department names from the database
-    fetched_dept_names = fetch_dept_abbreviations_from_database(course_prefix)
+    fetched_dept_names = fetch_dept_abbreviations_from_database(university, course_prefix)
 
     # Use fetched department for matching
-    subject, similarity_rate_title = match_subject_by_title(course_title, course_prefix, subject_list, abbreviations)
+    subject, similarity_rate_title = match_subject_by_title(course_title, course_prefix, university, subject_list, abbreviations)
 
     output_subject = subject
     similarity_rate = similarity_rate_title
@@ -430,6 +465,7 @@ atexit.register(db_pool.closeall)
 if __name__ == "__main__":
     setup()
     while True:  # Keep the application running until it's manually stopped
+        university = input("University: ") 
         course_prefix = input("Course Prefix: ")
         course_title = input("Course Title: ")
-        main(course_prefix, course_title)
+        main(course_prefix, course_title, university)
